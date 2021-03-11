@@ -5,7 +5,7 @@ import model.MutablePair
 import tests.TestProvider
 import kotlin.math.sqrt
 
-fun vectorBinary(@Vector a: List<Double>, @Vector b: List<Double>, operator: (Double, Double) -> Double): List<Double> {
+fun vectorBinary(@Vector a: List<Double>, @Vector b: List<Double>, operator: (Double, Double) -> Double): MutableList<Double> {
     val res = MutableList(a.size) { 0.toDouble() }
     for (i in a.indices) {
         res[i] = operator.invoke(a[i], b[i])
@@ -13,7 +13,7 @@ fun vectorBinary(@Vector a: List<Double>, @Vector b: List<Double>, operator: (Do
     return res
 }
 
-fun solveTransp(@Coefs coefs: List<Coef>, @Vector right: List<Double>, l: Int): List<Double> {
+fun solveTransp(@Coefs coefs: List<Coef>, @Vector right: List<Double>, l: Int): MutableList<Double> {
     val res = MutableList(right.size) { 0.toDouble() }
     for (i in (right.size - 1) downTo 0) {
         when (i) {
@@ -35,7 +35,7 @@ fun solveTransp(@Coefs coefs: List<Coef>, @Vector right: List<Double>, l: Int): 
     return res
 }
 
-fun solveCommon(@Coefs coefs: List<Coef>, @Vector right: List<Double>, l: Int): List<Double> {
+fun solveCommon(@Coefs coefs: List<Coef>, @Vector right: List<Double>, l: Int): MutableList<Double> {
     val res = mutableListOf<Double>()
     for (i in right.indices) {
         when (i) {
@@ -70,7 +70,7 @@ fun scalarMultiply(@Vector a: List<Double>, @Vector b: List<Double>): Double {
     return res
 }
 
-fun multiply(@Coefs l: List<Coef>, @Vector y: List<Double>): List<Double> {
+fun multiply(@Coefs l: List<Coef>, @Vector y: List<Double>): MutableList<Double> {
     val res = mutableListOf<Double>()
     for (i in y.indices) {
         val rowCoefs = l.filter { it.ir == i + 1 }
@@ -89,10 +89,10 @@ fun multiply(@Coefs l: List<Coef>, @Vector y: List<Double>): List<Double> {
 }
 
 fun gradientMethod(testProvider: TestProvider, l : Int, Nx: Int, Ny: Int): Pair<List<Double>, Int> {
-    val firstTest = testProvider.getTestData((testProvider.b() - testProvider.a()) / Nx, (testProvider.d() - testProvider.c()) / Ny, l)
-    @Coefs val coefs = firstTest.first
+    val testData = testProvider.getTestData((testProvider.b() - testProvider.a()) / Nx, (testProvider.d() - testProvider.c()) / Ny, l)
+    @Coefs val coefs = testData.first
     // index of answ need to be incremented
-    @Vector val answ = firstTest.second.sortedBy { it.m }.map { it.value }.toMutableList()
+    @Vector val answ = testData.second.sortedBy { it.m }.map { it.value }.toMutableList()
 
     val newCoefs = mutableListOf<Coef>()
 
@@ -103,20 +103,11 @@ fun gradientMethod(testProvider: TestProvider, l : Int, Nx: Int, Ny: Int): Pair<
         var newCoef = ai.coef - left * left - farLeft * farLeft
         val bi = coefs.find { it.ir == i && it.ic == i - 1 }
         val ci = coefs.find { it.ir == i && it.ic == i - l }
-        //println("i = ${i}, newCoef = $newCoef, ai = ${ai.coef} left = $left, farLeft = $farLeft")
         if (newCoef < 1) {
-            //println("otr i = $i, coef = $newCoef")
             val multiplier = (left * left + farLeft * farLeft + 1) / ai.coef
             answ[i - 1] = answ[i - 1] * multiplier
             ai.coef = ai.coef * multiplier
-            bi?.let {
-                it.coef = it.coef * multiplier
-            }
-            ci?.let {
-                it.coef = it.coef * multiplier
-            }
             newCoef = ai.coef - left * left - farLeft * farLeft
-            //println("new coef = $newCoef, ai = ${ai.coef}, left^2 = ${left * left}, farleft^2 = ${farLeft * farLeft}")
         }
         bi?.let {
             newCoefs.add(Coef(it.coef / sqrt(newCoef), i, i - 1))
@@ -149,23 +140,24 @@ fun gradientMethod(testProvider: TestProvider, l : Int, Nx: Int, Ny: Int): Pair<
         MutableList((Nx + 1) * (Ny + 1)) { 0.toDouble() })
 
     var k = 0
-    for (j in 0..100) {
+    for (j in 0..1000) {
+        //println("iteration $j")
         if (j > 0) {
-            w0.first = w0.second.toMutableList()
-            r0.first = r0.second.toMutableList()
-            y0.first = y0.second.toMutableList()
-            x0.first = x0.second.toMutableList()
-            s1.first = s1.second.toMutableList()
+            w0.first = w0.second
+            r0.first = r0.second
+            y0.first = y0.second
+            x0.first = x0.second
+            s1.first = s1.second
         }
         val alphaK = scalarMultiply(w0.first, r0.first) / scalarMultiply(multiply(coefs, s1.first), s1.first)
-        x0.second = vectorBinary(x0.first, s1.first.map { it * alphaK }, Double::plus).toMutableList()
+        x0.second = vectorBinary(x0.first, s1.first.map { it * alphaK }, Double::plus)
         r0.second =
-            vectorBinary(r0.first, multiply(coefs, s1.first).map { it * alphaK }, Double::minus).toMutableList()
+            vectorBinary(r0.first, multiply(coefs, s1.first).map { it * alphaK }, Double::minus)
         if (sqrt(scalarMultiply(r0.second, r0.second) / scalarMultiply(answ, answ)) > EPSILON) {
-            y0.second = solveCommon(newCoefs, r0.second, l).toMutableList()
-            w0.second = solveTransp(newCoefs, y0.second, l).toMutableList()
+            y0.second = solveCommon(newCoefs, r0.second, l)
+            w0.second = solveTransp(newCoefs, y0.second, l)
             val beta = scalarMultiply(w0.second, r0.second) / scalarMultiply(w0.first, r0.first)
-            s1.second = vectorBinary(w0.second, s1.first.map { it * beta }, Double::plus).toMutableList()
+            s1.second = vectorBinary(w0.second, s1.first.map { it * beta }, Double::plus)
         } else {
             k = j
             break

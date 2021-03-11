@@ -1,9 +1,11 @@
 import model.Right
 import tests.TestProvider
 import tests.implementations.FirstTest
+import tests.implementations.SecondTest
+import kotlin.math.absoluteValue
 
-const val Nx = 4
-const val Ny = 4
+const val Nx = 16
+const val Ny = 16
 const val EPSILON = 1E-15
 
 fun main() {
@@ -19,7 +21,8 @@ fun main() {
         }
     }
     val result = gradientMethod(testProvider, l, Nx, Ny)
-    println(vectorBinary(result.first, ans.sortedBy { it.m }.map { it.value }, Double::minus).map { it.format(15) })
+    println(vectorBinary(result.first, ans.sortedBy { it.m }.map { it.value }, Double::minus).map { it.absoluteValue }.maxOf { it })
+    println("result k = ${result.second}, Nx = $Nx, Ny = $Ny, epsilon = $EPSILON")
 }
 
 
