@@ -12,6 +12,7 @@ fun main() {
     val ny = 64
     val l = nx + 1
     val testProvider: TestProvider = FirstTest
+    println("Test = ${testProvider::class.java.simpleName} for Nx = $nx, Ny = $ny, epsilon = $EPSILON")
     val hi = (testProvider.b() - testProvider.a()) / nx
     val hj = (testProvider.d() - testProvider.c()) / ny
     val ans = mutableListOf<Right>()
@@ -22,15 +23,19 @@ fun main() {
         }
     }
     val result = gradientMethod(testProvider, l, nx, ny)
-    println(vectorBinary(result.first, ans.sortedBy { it.m }.map { it.value }, Double::minus).map { it.absoluteValue }
-        .maxOf { it })
-    println(result.first)
-    println("result k = ${result.second}, Nx = $nx, Ny = $ny, epsilon = $EPSILON")
+    println(
+        "max absolute error = ${
+            vectorBinary(result.first, ans.sortedBy { it.m }.map { it.value }, Double::minus).map { it.absoluteValue }
+                .maxOf { it }
+        }"
+    )
+    println("result k = ${result.second}")
 
     val requiredX = 2.1
     val requiredY = 1.1
     println("our solution = ${solutionAtPoint(requiredX, requiredY, result.first, nx, ny, l, testProvider)}")
     println("actual value = ${testProvider.u(requiredX, requiredY)}")
+    println("at point: x = $requiredX y = $requiredY")
 }
 
 fun solutionAtPoint(
