@@ -6,13 +6,13 @@ import kotlin.math.absoluteValue
 import kotlin.math.pow
 import kotlin.math.sqrt
 
-const val EPSILON = 1E-15
+const val EPSILON = 1E-5
 
 fun main() {
-    val nx = 4
-    val ny = 4
+    val nx = 128
+    val ny = 128
     val l = nx + 1
-    val testProvider: TestProvider = FirstTest
+    val testProvider: TestProvider = SecondTest
     println("Test = ${testProvider::class.java.simpleName} for Nx = $nx, Ny = $ny, epsilon = $EPSILON")
     val hi = (testProvider.b() - testProvider.a()) / nx
     val hj = (testProvider.d() - testProvider.c()) / ny

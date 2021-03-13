@@ -118,19 +118,19 @@ fun gradientMethod(testProvider: TestProvider, l : Int, Nx: Int, Ny: Int): Pair<
         MutableList((Nx + 1) * (Ny + 1)) { 0.toDouble() })
     val Ax0 = multiply(coefs, x0.first)
     val r0 = MutablePair<MutableList<Double>, MutableList<Double>>(
-        vectorBinary(answ, Ax0, Double::minus).toMutableList(),
+        vectorBinary(answ, Ax0, Double::minus),
         mutableListOf()
     )
     val y0 = MutablePair<MutableList<Double>, MutableList<Double>>(
-        solveCommon(newCoefs, r0.first, l).toMutableList(),
+        solveCommon(newCoefs, r0.first, l),
         mutableListOf()
     )
     val w0 = MutablePair<MutableList<Double>, MutableList<Double>>(
-        solveTransp(newCoefs, y0.first, l).toMutableList(),
+        solveTransp(newCoefs, y0.first, l),
         mutableListOf()
     )
     val s1 = MutablePair(
-        w0.first.toMutableList(),
+        w0.first,
         MutableList((Nx + 1) * (Ny + 1)) { 0.toDouble() })
 
     var k = 0
