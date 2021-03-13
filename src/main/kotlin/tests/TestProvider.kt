@@ -1,6 +1,5 @@
 package tests
 
-import model.Coef
 import model.Right
 
 interface TestProvider {
@@ -22,8 +21,8 @@ interface TestProvider {
     fun y(j: Double, hy: Double): Double
     fun u(x: Double, y: Double): Double
 
-    fun getTestData(Nx: Int, Ny: Int, l: Int): Pair<List<Coef>, List<Right>> {
-        val res: Pair<MutableList<Coef>, MutableList<Right>> = Pair(mutableListOf(), mutableListOf())
+    fun getTestData(Nx: Int, Ny: Int, l: Int): Pair<Map<Pair<Int, Int>, Double>, List<Right>> {
+        val res: Pair<MutableMap<Pair<Int, Int>, Double>, MutableList<Right>> = Pair(mutableMapOf(), mutableListOf())
         val hj = (d() - c()) / Ny
         val hi = (b() - a()) / Nx
         val coefs = res.first
@@ -31,29 +30,27 @@ interface TestProvider {
         for (i in 1 until Nx) {
             for (j in 1 until Ny) {
                 val m = j * l + i + 1
-                coefs.add(Coef(-hi / hj * k2(x(i.toDouble(), hi), y(j - 1.0 / 2, hj)), m, m - l))
-                coefs.add(Coef(-hj / hi * k1(x(i - 1.0 / 2, hi), y(j.toDouble(), hj)), m, m - 1))
-                coefs.add(
-                    Coef(hj / hi * (k1(x(i + 1.0 / 2, hi), y(j.toDouble(), hj)) + k1(x(i - 1.0 / 2, hi), y(j.toDouble(), hj)))
-                            + hi / hj * (k2(x(i.toDouble(), hi), y(j + 1.0 / 2, hj)) + k2(x(i.toDouble(), hi), y(j - 1.0 / 2, hj))), m, m
-                    )
-                )
-                coefs.add(Coef(-hj / hi * k1(x(i + 1.0 / 2, hi), y(j.toDouble(), hj)), m, m + 1))
-                coefs.add(Coef(-hi / hj * k2(x(i.toDouble(), hi), y(j + 1.0 / 2, hj)), m, m + l))
+                coefs[Pair(m, m - l)] = -hi / hj * k2(x(i.toDouble(), hi), y(j - 1.0 / 2, hj))
+                coefs[Pair(m, m - 1)] = -hj / hi * k1(x(i - 1.0 / 2, hi), y(j.toDouble(), hj))
+                coefs[Pair(m, m)] = hj / hi * (k1(x(i + 1.0 / 2, hi), y(j.toDouble(), hj)) + k1(
+                    x(i - 1.0 / 2, hi),
+                    y(j.toDouble(), hj)
+                )) + hi / hj * (k2(x(i.toDouble(), hi), y(j + 1.0 / 2, hj)) + k2(
+                    x(i.toDouble(), hi),
+                    y(j - 1.0 / 2, hj)
+                ))
+                coefs[Pair(m, m + 1)] = -hj / hi * k1(x(i + 1.0 / 2, hi), y(j.toDouble(), hj))
+                coefs[Pair(m, m + l)] = -hi / hj * k2(x(i.toDouble(), hi), y(j + 1.0 / 2, hj))
                 right.add(Right(m, hi * hj * f(x(i.toDouble(), hi), y(j.toDouble(), hj))))
             }
         }
         for (i in 1 until Nx) {
             val j = Ny
             val m = j * l + i + 1
-            coefs.add(Coef(-hi / hj * k2(x(i.toDouble(), hi), y(j - 1.0 / 2, hj)), m, m - l))
-            coefs.add(Coef(-hj / 2 / hi * k1(x(i - 1.0 / 2, hi), y(j.toDouble(), hj)), m, m - 1))
-            coefs.add(
-                Coef(hj / 2 / hi * (k1(x(i + 1.0 / 2, hi), y(j.toDouble(), hj)) + k1(x(i - 1.0 / 2, hi), y(j.toDouble(), hj)))
-                        + hi * (xi() + k2(x(i.toDouble(), hi), y(j - 1.0 / 2, hj)) / hj), m, m
-                )
-            )
-            coefs.add(Coef(-hj / 2 / hi * k1(x(i + 1.0 / 2, hi), y(j.toDouble(), hj)), m, m + 1))
+            coefs[Pair(m, m - l)] = -hi / hj * k2(x(i.toDouble(), hi), y(j - 1.0 / 2, hj))
+            coefs[Pair(m, m - 1)] = -hj / 2 / hi * k1(x(i - 1.0 / 2, hi), y(j.toDouble(), hj))
+            coefs[Pair(m, m)] = hj / 2 / hi * (k1(x(i + 1.0 / 2, hi), y(j.toDouble(), hj)) + k1(x(i - 1.0 / 2, hi), y(j.toDouble(), hj))) + hi * (xi() + k2(x(i.toDouble(), hi), y(j - 1.0 / 2, hj)) / hj)
+            coefs[Pair(m, m + 1)] = -hj / 2 / hi * k1(x(i + 1.0 / 2, hi), y(j.toDouble(), hj))
             right.add(
                 Right(m, hi * hj / 2 * f(x(i.toDouble(), hi), y(j.toDouble(), hj)) + hi * g4(x(i.toDouble(), hi)))
             )
@@ -62,43 +59,45 @@ interface TestProvider {
         for (j in 1..Ny) {
             val i = 0
             val m = j * l + i + 1
-            coefs.add(Coef(1.toDouble(), m, m))
+            coefs[Pair(m, m)] = 1.toDouble()
             right.add(Right(m, g1(y(j.toDouble(), hj))))
         }
         for (i in 0..Nx) {
             val j = 0
             val m = j * l + i + 1
-            coefs.add(Coef(1.toDouble(), m, m))
+            coefs[Pair(m, m)] = 1.toDouble()
             right.add(Right(m, g3(x(i.toDouble(), hi))))
         }
         for (j in 1..Ny) {
             val i = Nx
             val m = j * l + i + 1
-            coefs.add(Coef(1.toDouble(), m, m))
+            coefs[Pair(m, m)] = 1.toDouble()
             right.add(Right(m, g2(y(j.toDouble(), hj))))
         }
         for (i in 1 until Nx) {
             val j = 1
             val m = j * l + i + 1
-            val coef = coefs.find { it.ir == m && it.ic == m - l }!!
-            right.find { it.m == m }!!.value -= g3(x(i.toDouble(), hi)) * coef.coef
-            coefs.remove(coef)
+            val key = Pair(m, m - l)
+            val coef = coefs[key]!!
+            right.find { it.m == m }!!.value -= g3(x(i.toDouble(), hi)) * coef
+            coefs.remove(key)
         }
         for (j in 1..Ny) {
             val i = 1
             val m = j * l + i + 1
-            val coef = coefs.find { it.ir == m && it.ic == m - 1 }!!
-            right.find { it.m == m }!!.value -= g1(y(j.toDouble(), hj)) * coef.coef
-            coefs.remove(coef)
+            val key = Pair(m, m - 1)
+            val coef = coefs[key]!!
+            right.find { it.m == m }!!.value -= g1(y(j.toDouble(), hj)) * coef
+            coefs.remove(key)
         }
         for (j in 1..Ny) {
             val i = Nx - 1
             val m = j * l + i + 1
-            val coef = coefs.find { it.ir == m && it.ic == m + 1 }!!
-            right.find { it.m == m }!!.value -= g2(y(j.toDouble(), hj)) * coef.coef
-            coefs.remove(coef)
+            val key = Pair(m, m + 1)
+            val coef = coefs[key]!!
+            right.find { it.m == m }!!.value -= g2(y(j.toDouble(), hj)) * coef
+            coefs.remove(key)
         }
-        coefs.removeIf { it.ic > it.ir }
-        return res
+        return Pair(res.first.filter { it.key.first >= it.key.second }, res.second)
     }
 }

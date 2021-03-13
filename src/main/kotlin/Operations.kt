@@ -1,11 +1,16 @@
 import annotations.Coefs
 import annotations.Vector
-import model.Coef
 import model.MutablePair
+import model.Right
 import tests.TestProvider
+import kotlin.math.absoluteValue
 import kotlin.math.sqrt
 
-fun vectorBinary(@Vector a: List<Double>, @Vector b: List<Double>, operator: (Double, Double) -> Double): MutableList<Double> {
+fun vectorBinary(
+    @Vector a: List<Double>,
+    @Vector b: List<Double>,
+    operator: (Double, Double) -> Double
+): MutableList<Double> {
     val res = MutableList(a.size) { 0.toDouble() }
     for (i in a.indices) {
         res[i] = operator.invoke(a[i], b[i])
@@ -13,43 +18,43 @@ fun vectorBinary(@Vector a: List<Double>, @Vector b: List<Double>, operator: (Do
     return res
 }
 
-fun solveTransp(@Coefs coefs: List<Coef>, @Vector right: List<Double>, l: Int): MutableList<Double> {
+fun solveTransp(@Coefs coefs: Map<Pair<Int, Int>, Double>, @Vector right: List<Double>, l: Int): MutableList<Double> {
     val res = MutableList(right.size) { 0.toDouble() }
     for (i in (right.size - 1) downTo 0) {
         when (i) {
             right.size - 1 -> {
-                res[i] = right[i] / coefs.find { it.ir == i + 1 && it.ic == i + 1 }!!.coef
+                res[i] = right[i] / coefs[Pair(i + 1, i + 1)]!!
             }
             in right.size - 1 - l until right.size - 1 -> {
-                val left = coefs.find { it.ir == i + 2 && it.ic == i + 1 }?.coef ?: 0.toDouble()
-                res[i] = (right[i] - left * res[i + 1]) / coefs.find { it.ir == i + 1 && it.ic == i + 1 }!!.coef
+                val left = coefs[Pair(i + 2, i + 1)] ?: 0.toDouble()
+                res[i] = (right[i] - left * res[i + 1]) / coefs[Pair(i + 1, i + 1)]!!
             }
             else -> {
-                val left = coefs.find { it.ir == i + 2 && it.ic == i + 1 }?.coef ?: 0.toDouble()
-                val farLeft = coefs.find { it.ir == i + l + 1 && it.ic == i + 1 }?.coef ?: 0.toDouble()
+                val left = coefs[Pair(i + 2, i + 1)] ?: 0.toDouble()
+                val farLeft = coefs[Pair(i + l + 1, i + 1)] ?: 0.toDouble()
                 res[i] =
-                    (right[i] - left * res[i + 1] - farLeft * res[i + l]) / coefs.find { it.ir == i + 1 && it.ic == i + 1 }!!.coef
+                    (right[i] - left * res[i + 1] - farLeft * res[i + l]) / coefs[Pair(i + 1, i + 1)]!!
             }
         }
     }
     return res
 }
 
-fun solveCommon(@Coefs coefs: List<Coef>, @Vector right: List<Double>, l: Int): MutableList<Double> {
+fun solveCommon(@Coefs coefs: Map<Pair<Int, Int>, Double>, @Vector right: List<Double>, l: Int): MutableList<Double> {
     val res = mutableListOf<Double>()
     for (i in right.indices) {
         when (i) {
             0 -> {
-                res.add(right[i] / coefs.find { it.ir == i + 1 && it.ic == i + 1 }!!.coef)
+                res.add(right[i] / coefs[Pair(i + 1, i + 1)]!!)
             }
             in 1 until l -> {
-                val left = coefs.find { it.ir == i + 1 && it.ic == i }?.coef ?: 0.toDouble()
-                res.add((right[i] - left * res[i - 1]) / coefs.find { it.ir == i + 1 && it.ic == i + 1 }!!.coef)
+                val left = coefs[Pair(i + 1, i)] ?: 0.toDouble()
+                res.add((right[i] - left * res[i - 1]) / coefs[Pair(i + 1, i + 1)]!!)
             }
             else -> {
-                val left = coefs.find { it.ir == i + 1 && it.ic == i }?.coef ?: 0.toDouble()
-                val farLeft = coefs.find { it.ir == i + 1 && it.ic == i - l + 1 }?.coef ?: 0.toDouble()
-                res.add((right[i] - left * res[i - 1] - farLeft * res[i - l]) / coefs.find { it.ir == i + 1 && it.ic == i + 1 }!!.coef)
+                val left = coefs[Pair(i + 1, i)] ?: 0.toDouble()
+                val farLeft = coefs[Pair(i + 1, i - l + 1)] ?: 0.toDouble()
+                res.add((right[i] - left * res[i - 1] - farLeft * res[i - l]) / coefs[Pair(i + 1, i + 1)]!!)
             }
         }
     }
@@ -64,17 +69,17 @@ fun scalarMultiply(@Vector a: List<Double>, @Vector b: List<Double>): Double {
     return res
 }
 
-fun multiply(@Coefs l: List<Coef>, @Vector y: List<Double>): MutableList<Double> {
+fun multiply(@Coefs l: Map<Pair<Int, Int>, Double>, @Vector y: List<Double>): MutableList<Double> {
     val res = mutableListOf<Double>()
     for (i in y.indices) {
-        val rowCoefs = l.filter { it.ir == i + 1 }
+        val rowCoefs = l.filter { it.key.first == i + 1 }
         var sum = 0.toDouble()
         rowCoefs.forEach {
-            sum += it.coef * y[it.ic - 1]
+            sum += it.value * y[it.key.second - 1]
         }
-        val colCoefs = l.filter { it.ic == i + 1 && it.ic != it.ir }
+        val colCoefs = l.filter { it.key.second == i + 1 && it.key.second != it.key.first }
         colCoefs.forEach {
-            sum += it.coef * y[it.ir - 1]
+            sum += it.value * y[it.key.first - 1]
         }
         res.add(sum)
         sum = 0.toDouble()
@@ -82,35 +87,35 @@ fun multiply(@Coefs l: List<Coef>, @Vector y: List<Double>): MutableList<Double>
     return res
 }
 
-fun gradientMethod(testProvider: TestProvider, l : Int, Nx: Int, Ny: Int): Pair<List<Double>, Int> {
+fun gradientMethod(testProvider: TestProvider, l: Int, Nx: Int, Ny: Int): Pair<List<Double>, Int> {
     val testData = testProvider.getTestData(Nx, Ny, l)
-    @Coefs val coefs = testData.first
+    @Coefs val coefs = testData.first.toMutableMap()
     // index of answ need to be incremented
     @Vector val answ = testData.second.sortedBy { it.m }.map { it.value }.toMutableList()
 
-    val newCoefs = mutableListOf<Coef>()
+    val newCoefs = mutableMapOf<Pair<Int, Int>, Double>()
 
     for (i in 1..(Nx + 1) * (Ny + 1)) {
-        val ai = coefs.find { it.ir == i && it.ic == i }!!
-        val left = newCoefs.find { it.ir == i - 1 && it.ic == i - 2 }?.coef ?: 0.toDouble()
-        val farLeft = newCoefs.find { it.ir == i - l && it.ic == i - 2 * l }?.coef ?: 0.toDouble()
-        var newCoef = ai.coef - left * left - farLeft * farLeft
-        val bi = coefs.find { it.ir == i && it.ic == i - 1 }
-        val ci = coefs.find { it.ir == i && it.ic == i - l }
+        val ai = coefs[Pair(i, i)]!!
+        val left = newCoefs[Pair(i - 1, i - 2)] ?: 0.toDouble()
+        val farLeft = newCoefs[Pair(i - l, i - 2 * l)] ?: 0.toDouble()
+        var newCoef = ai - left * left - farLeft * farLeft
+        val bi = coefs[Pair(i, i - 1)]
+        val ci = coefs[Pair(i, i - l)]
         if (newCoef < 1) {
-            val multiplier = (left * left + farLeft * farLeft + 1) / ai.coef
+            val multiplier = (left * left + farLeft * farLeft + 1) / ai
             answ[i - 1] = answ[i - 1] * multiplier
-            ai.coef = ai.coef * multiplier
-            newCoef = ai.coef - left * left - farLeft * farLeft
+            coefs[Pair(i, i)] = ai * multiplier
+            newCoef = ai * multiplier - left * left - farLeft * farLeft
         }
         bi?.let {
-            newCoefs.add(Coef(it.coef / sqrt(newCoef), i, i - 1))
+            newCoefs[Pair(i, i - 1)] = it / sqrt(newCoef)
         }
 
         ci?.let {
-            newCoefs.add(Coef(it.coef / sqrt(newCoef), i, i - l))
+            newCoefs[Pair(i, i - l)] = it / sqrt(newCoef)
         }
-        newCoefs.add(Coef(sqrt(newCoef), i, i))
+        newCoefs[Pair(i, i)] = sqrt(newCoef)
     }
 
 
@@ -134,8 +139,7 @@ fun gradientMethod(testProvider: TestProvider, l : Int, Nx: Int, Ny: Int): Pair<
         MutableList((Nx + 1) * (Ny + 1)) { 0.toDouble() })
 
     var k = 0
-    for (j in 0..1000) {
-        //println("iteration $j")
+    for (j in 0..400) {
         if (j > 0) {
             w0.first = w0.second
             r0.first = r0.second
