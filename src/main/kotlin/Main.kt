@@ -1,17 +1,18 @@
 import model.Right
 import tests.TestProvider
 import tests.implementations.FirstTest
+import tests.implementations.SecondTest
 import kotlin.math.absoluteValue
 import kotlin.math.pow
 import kotlin.math.sqrt
 
-const val EPSILON = 1E-15
+const val EPSILON = 1E-10
 
 fun main() {
-    val nx = 64
-    val ny = 64
+    val nx = 128
+    val ny = 128
     val l = nx + 1
-    val testProvider: TestProvider = FirstTest
+    val testProvider: TestProvider = SecondTest
     println("Test = ${testProvider::class.java.simpleName} for Nx = $nx, Ny = $ny, epsilon = $EPSILON")
     val hi = (testProvider.b() - testProvider.a()) / nx
     val hj = (testProvider.d() - testProvider.c()) / ny

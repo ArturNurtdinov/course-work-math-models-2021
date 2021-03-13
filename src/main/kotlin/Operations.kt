@@ -49,12 +49,6 @@ fun solveCommon(@Coefs coefs: List<Coef>, @Vector right: List<Double>, l: Int): 
             else -> {
                 val left = coefs.find { it.ir == i + 1 && it.ic == i }?.coef ?: 0.toDouble()
                 val farLeft = coefs.find { it.ir == i + 1 && it.ic == i - l + 1 }?.coef ?: 0.toDouble()
-                /*if (left == null) {
-                    left = coefs.find { it.ir == i + 2 && it.ic == i + 1 }?.coef ?: 0.toDouble()
-                }
-                if (farLeft == null) {
-                    farLeft = coefs.find { it.ir == i + 1 + l && it.ic == i + 1 }?.coef ?: 0.toDouble()
-                }*/
                 res.add((right[i] - left * res[i - 1] - farLeft * res[i - l]) / coefs.find { it.ir == i + 1 && it.ic == i + 1 }!!.coef)
             }
         }
