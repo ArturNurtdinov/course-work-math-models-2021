@@ -1,28 +1,26 @@
 import model.Right
 import tests.TestProvider
-import tests.implementations.FirstTest
 import tests.implementations.SecondTest
 import kotlin.math.absoluteValue
-
-const val Nx = 16
-const val Ny = 16
-const val EPSILON = 1E-15
+const val EPSILON = 1E-10
 
 fun main() {
-    val l = Nx + 1
-    val testProvider: TestProvider = FirstTest
-    val hi = (testProvider.b() - testProvider.a()) / Nx
-    val hj = (testProvider.d() - testProvider.c()) / Ny
+    val nx = 64
+    val ny = 64
+    val l = nx + 1
+    val testProvider: TestProvider = SecondTest
+    val hi = (testProvider.b() - testProvider.a()) / nx
+    val hj = (testProvider.d() - testProvider.c()) / ny
     val ans = mutableListOf<Right>()
-    for (i in 0..Nx) {
-        for (j in 0..Ny) {
+    for (i in 0..nx) {
+        for (j in 0..ny) {
             val m = j * l + i + 1
             ans.add(Right(m, testProvider.u(testProvider.x(i.toDouble(), hi), testProvider.y(j.toDouble(), hj))))
         }
     }
-    val result = gradientMethod(testProvider, l, Nx, Ny)
+    val result = gradientMethod(testProvider, l, nx, ny)
     println(vectorBinary(result.first, ans.sortedBy { it.m }.map { it.value }, Double::minus).map { it.absoluteValue }.maxOf { it })
-    println("result k = ${result.second}, Nx = $Nx, Ny = $Ny, epsilon = $EPSILON")
+    println("result k = ${result.second}, Nx = $nx, Ny = $ny, epsilon = $EPSILON")
 }
 
 

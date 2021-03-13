@@ -89,7 +89,7 @@ fun multiply(@Coefs l: List<Coef>, @Vector y: List<Double>): MutableList<Double>
 }
 
 fun gradientMethod(testProvider: TestProvider, l : Int, Nx: Int, Ny: Int): Pair<List<Double>, Int> {
-    val testData = testProvider.getTestData((testProvider.b() - testProvider.a()) / Nx, (testProvider.d() - testProvider.c()) / Ny, l)
+    val testData = testProvider.getTestData(Nx, Ny, l)
     @Coefs val coefs = testData.first
     // index of answ need to be incremented
     @Vector val answ = testData.second.sortedBy { it.m }.map { it.value }.toMutableList()

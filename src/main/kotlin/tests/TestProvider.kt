@@ -1,7 +1,5 @@
 package tests
 
-import Nx
-import Ny
 import model.Coef
 import model.Right
 
@@ -24,38 +22,40 @@ interface TestProvider {
     fun y(j: Double, hy: Double): Double
     fun u(x: Double, y: Double): Double
 
-    fun getTestData(Hi: Double, Hj: Double, l: Int): Pair<List<Coef>, List<Right>> {
+    fun getTestData(Nx: Int, Ny: Int, l: Int): Pair<List<Coef>, List<Right>> {
         val res: Pair<MutableList<Coef>, MutableList<Right>> = Pair(mutableListOf(), mutableListOf())
+        val hj = (d() - c()) / Ny
+        val hi = (b() - a()) / Nx
         val coefs = res.first
         val right = res.second
         for (i in 1 until Nx) {
             for (j in 1 until Ny) {
                 val m = j * l + i + 1
-                coefs.add(Coef(-Hi / Hj * k2(x(i.toDouble(), Hi), y(j - 1.0 / 2, Hj)), m, m - l))
-                coefs.add(Coef(-Hj / Hi * k1(x(i - 1.0 / 2, Hi), y(j.toDouble(), Hj)), m, m - 1))
+                coefs.add(Coef(-hi / hj * k2(x(i.toDouble(), hi), y(j - 1.0 / 2, hj)), m, m - l))
+                coefs.add(Coef(-hj / hi * k1(x(i - 1.0 / 2, hi), y(j.toDouble(), hj)), m, m - 1))
                 coefs.add(
-                    Coef(Hj / Hi * (k1(x(i + 1.0 / 2, Hi), y(j.toDouble(), Hj)) + k1(x(i - 1.0 / 2, Hi), y(j.toDouble(), Hj)))
-                            + Hi / Hj * (k2(x(i.toDouble(), Hi), y(j + 1.0 / 2, Hj)) + k2(x(i.toDouble(), Hi), y(j - 1.0 / 2, Hj))), m, m
+                    Coef(hj / hi * (k1(x(i + 1.0 / 2, hi), y(j.toDouble(), hj)) + k1(x(i - 1.0 / 2, hi), y(j.toDouble(), hj)))
+                            + hi / hj * (k2(x(i.toDouble(), hi), y(j + 1.0 / 2, hj)) + k2(x(i.toDouble(), hi), y(j - 1.0 / 2, hj))), m, m
                     )
                 )
-                coefs.add(Coef(-Hj / Hi * k1(x(i + 1.0 / 2, Hi), y(j.toDouble(), Hj)), m, m + 1))
-                coefs.add(Coef(-Hi / Hj * k2(x(i.toDouble(), Hi), y(j + 1.0 / 2, Hj)), m, m + l))
-                right.add(Right(m, Hi * Hj * f(x(i.toDouble(), Hi), y(j.toDouble(), Hj))))
+                coefs.add(Coef(-hj / hi * k1(x(i + 1.0 / 2, hi), y(j.toDouble(), hj)), m, m + 1))
+                coefs.add(Coef(-hi / hj * k2(x(i.toDouble(), hi), y(j + 1.0 / 2, hj)), m, m + l))
+                right.add(Right(m, hi * hj * f(x(i.toDouble(), hi), y(j.toDouble(), hj))))
             }
         }
         for (i in 1 until Nx) {
             val j = Ny
             val m = j * l + i + 1
-            coefs.add(Coef(-Hi / Hj * k2(x(i.toDouble(), Hi), y(j - 1.0 / 2, Hj)), m, m - l))
-            coefs.add(Coef(-Hj / 2 / Hi * k1(x(i - 1.0 / 2, Hi), y(j.toDouble(), Hj)), m, m - 1))
+            coefs.add(Coef(-hi / hj * k2(x(i.toDouble(), hi), y(j - 1.0 / 2, hj)), m, m - l))
+            coefs.add(Coef(-hj / 2 / hi * k1(x(i - 1.0 / 2, hi), y(j.toDouble(), hj)), m, m - 1))
             coefs.add(
-                Coef(Hj / 2 / Hi * (k1(x(i + 1.0 / 2, Hi), y(j.toDouble(), Hj)) + k1(x(i - 1.0 / 2, Hi), y(j.toDouble(), Hj)))
-                        + Hi * (xi() + k2(x(i.toDouble(), Hi), y(j - 1.0 / 2, Hj)) / Hj), m, m
+                Coef(hj / 2 / hi * (k1(x(i + 1.0 / 2, hi), y(j.toDouble(), hj)) + k1(x(i - 1.0 / 2, hi), y(j.toDouble(), hj)))
+                        + hi * (xi() + k2(x(i.toDouble(), hi), y(j - 1.0 / 2, hj)) / hj), m, m
                 )
             )
-            coefs.add(Coef(-Hj / 2 / Hi * k1(x(i + 1.0 / 2, Hi), y(j.toDouble(), Hj)), m, m + 1))
+            coefs.add(Coef(-hj / 2 / hi * k1(x(i + 1.0 / 2, hi), y(j.toDouble(), hj)), m, m + 1))
             right.add(
-                Right(m, Hi * Hj / 2 * f(x(i.toDouble(), Hi), y(j.toDouble(), Hj)) + Hi * g4(x(i.toDouble(), Hi)))
+                Right(m, hi * hj / 2 * f(x(i.toDouble(), hi), y(j.toDouble(), hj)) + hi * g4(x(i.toDouble(), hi)))
             )
         }
 
@@ -63,39 +63,39 @@ interface TestProvider {
             val i = 0
             val m = j * l + i + 1
             coefs.add(Coef(1.toDouble(), m, m))
-            right.add(Right(m, g1(y(j.toDouble(), Hj))))
+            right.add(Right(m, g1(y(j.toDouble(), hj))))
         }
         for (i in 0..Nx) {
             val j = 0
             val m = j * l + i + 1
             coefs.add(Coef(1.toDouble(), m, m))
-            right.add(Right(m, g3(x(i.toDouble(), Hi))))
+            right.add(Right(m, g3(x(i.toDouble(), hi))))
         }
         for (j in 1..Ny) {
             val i = Nx
             val m = j * l + i + 1
             coefs.add(Coef(1.toDouble(), m, m))
-            right.add(Right(m, g2(y(j.toDouble(), Hj))))
+            right.add(Right(m, g2(y(j.toDouble(), hj))))
         }
         for (i in 1 until Nx) {
             val j = 1
             val m = j * l + i + 1
             val coef = coefs.find { it.ir == m && it.ic == m - l }!!
-            right.find { it.m == m }!!.value -= g3(x(i.toDouble(), Hi)) * coef.coef
+            right.find { it.m == m }!!.value -= g3(x(i.toDouble(), hi)) * coef.coef
             coefs.remove(coef)
         }
         for (j in 1..Ny) {
             val i = 1
             val m = j * l + i + 1
             val coef = coefs.find { it.ir == m && it.ic == m - 1 }!!
-            right.find { it.m == m }!!.value -= g1(y(j.toDouble(), Hj)) * coef.coef
+            right.find { it.m == m }!!.value -= g1(y(j.toDouble(), hj)) * coef.coef
             coefs.remove(coef)
         }
         for (j in 1..Ny) {
             val i = Nx - 1
             val m = j * l + i + 1
             val coef = coefs.find { it.ir == m && it.ic == m + 1 }!!
-            right.find { it.m == m }!!.value -= g2(y(j.toDouble(), Hj)) * coef.coef
+            right.find { it.m == m }!!.value -= g2(y(j.toDouble(), hj)) * coef.coef
             coefs.remove(coef)
         }
         coefs.removeIf { it.ic > it.ir }
